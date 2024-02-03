@@ -1,9 +1,10 @@
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, status, viewsets, exceptions
 from users.serializers import FollowSerializer, UserSerializer
 from users.models import User, Follow
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -28,13 +29,23 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         """Подписка/отписка."""
         user = request.user
-        author = User.objects.get(id=pk)
+        author = get_object_or_404(User, pk=pk)
         if request.method == 'POST':
+            if user == author:
+                raise exceptions.ValidationError('Укажите другого автора.')
+            if Follow.objects.filter(user=user, author=author).exists():
+                raise exceptions.ValidationError('Подписка уже оформлена.')
             Follow.objects.create(user=user, author=author)
             serializer = FollowSerializer(author, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        Follow.objects.filter(user=user, author=author).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        if request.method == 'DELETE':
+            if not Follow.objects.filter(user=user, author=author).exists():
+                raise exceptions.ValidationError('Вы не пописаны на автора.')
+            subscription = get_object_or_404(Follow, user=user, author=author)
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
@@ -43,9 +54,6 @@ class UserViewSet(viewsets.ModelViewSet):
         print(user)
         user_following = User.objects.filter(following__user=user)
         page = self.paginate_queryset(user_following)
-        serializer = UserSerializer(page,
-                                    context={'request': request},
+        serializer = UserSerializer(page, context={'request': request},
                                     many=True)
         return self.get_paginated_response(serializer.data)
-
-

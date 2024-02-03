@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from users.validators import validate_username
+
 
 class User(AbstractUser):
     """Модель пользователя."""
@@ -10,7 +12,8 @@ class User(AbstractUser):
         unique=True,
     )
     username = models.CharField(
-        verbose_name='Юзернейм',
+        'Имя пользователя',
+        validators=(validate_username,),
         max_length=150,
         unique=True,
     )
@@ -53,3 +56,5 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        
+        

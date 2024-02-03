@@ -1,3 +1,4 @@
+from api.permissions import AdminOrAuthorPermission
 from rest_framework import viewsets, filters
 from recipes.models import Favorite, Ingredient, RecipeIngredient,  Recipe, ShoppingCart, Tag
 from api.serializers import FavoriteSerializer, IngredientSerializer, RecipeIngredientSerializer, RecipeSerializer, ShoppingCartSerializer, TagSerializer, RecipeListSerializer
@@ -9,6 +10,8 @@ from users.serializers import RecipeMinifiedSerializer
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.db.models import Sum
+from .filters import RecipeFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -31,6 +34,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет рецепта."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
+    permission_classes = (AdminOrAuthorPermission,)
 
     def get_serializer_class(self):
         if self.action in ('create', 'partial_update'):
@@ -128,20 +134,4 @@ class RecipeViewSet(viewsets.ModelViewSet):
                f'{ingredient.name} - {amount} {ingredient.measurement_unit},\n'
             )
         return response
-
-
-class FavoriteViewSet(viewsets.ModelViewSet):
-    """Вьюсет ."""
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteSerializer
-
-
-class RecipeIngredientViewSet(viewsets.ModelViewSet):
-    queryset = RecipeIngredient.objects.all()
-    serializer_class = RecipeIngredientSerializer
-
-
-class ShoppingCartViewSet(viewsets.ModelViewSet):
-    queryset = ShoppingCart.objects.all()
-    serializer_class = ShoppingCartSerializer
 
