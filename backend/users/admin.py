@@ -1,21 +1,13 @@
 from django.contrib import admin
 
-from users.models import User, Follow
+from .models import FoodgramUser
 
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'email', 'username', 'first_name', 'last_name', 'password',
-        'is_superuser', 'is_active', 'date_joined',
-    )
-    list_filter = ('email', 'username',)
-    search_fields = ('username',)
-    list_display_links = ('username',)
+class FoodgramUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'status', "password")
+    list_filter = ('username', 'email',)
+    search_fields = ('username', 'email',)
+    empty_value_display = '-пусто-'
 
 
-@admin.register(Follow)
-class FollowAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'author',)
-    search_fields = ('user',)
-    list_display_links = ('user',)
+admin.site.register(FoodgramUser, FoodgramUserAdmin)

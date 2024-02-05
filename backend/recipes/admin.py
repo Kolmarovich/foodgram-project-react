@@ -1,52 +1,63 @@
+from django import forms
 from django.contrib import admin
-
-from .models import (Favorite, Ingredient, RecipeIngredient,
-                     Recipe, ShoppingCart, Tag)
-
-admin.site.empty_value_display = 'Не задано'
-
-
-@admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'measurement_unit',)
-    list_filter = ('name',)
-    ordering = ('name',)
-    search_fields = ('name',)
-    list_display_links = ('name',)
+from django.http import HttpResponseRedirect
+from .models import (
+    Tag, Ingredient, Recipe, FavoriteRecipe,
+    Follow, ShopingCart, IngredientInRecipe
+)
 
 
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'color', 'slug',)
-    list_filter = ('name', 'slug',)
-    search_fields = ('name', 'slug',)
-    ordering = ('name',)
-    list_display_links = ('name',)
+class IngredientInRecipeInlineFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        if not any(form.cleaned_data for form in self.forms):
+            raise forms.ValidationError(
+                'Необходимо добавить хотя бы один ингредиент.')
 
 
-class IngredientInline(admin.TabularInline):
-    model = RecipeIngredient
-    extra = 0
-    min_num = 1
+class IngredientInRecipeInline(admin.TabularInline):
+    model = IngredientInRecipe
+    extra = 1
+    formset = IngredientInRecipeInlineFormSet
 
 
-@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'author', 'name', 'image', 'text',
-        'cooking_time', 'pub_date',
-    )
-    list_filter = ('author', 'name', 'tags')
-    ordering = ('-pub_date',)
-    readonly_fields = ('favorite_count', 'pub_date')
-    inlines = (IngredientInline,)  # Правильное название атрибута
-    search_fields = ('author__username',)  # Поле для поиска
-    list_display_links = ('author',)  # Поле для ссылки в списке
+    inlines = (IngredientInRecipeInline,)
+    filter_horizontal = ['tags']
 
-    @admin.display(description='Количество добавлений в избранное')
-    def favorite_count(self, recipe):
-        return recipe.favorites_recipe.count()
+    def response_add(self, request, obj, post_url_continue=None):
+        if not obj.ingredients.exists():
+            self.message_user(
+                request,
+                "Необходимо добавить хотя бы один ингредиент.",
+                level='ERROR')
+            return HttpResponseRedirect(request.path)
+        return super().response_add(request, obj, post_url_continue)
+
+    def response_change(self, request, obj):
+        if not obj.ingredients.exists():
+            self.message_user(
+                request,
+                "Необходимо добавить хотя бы один ингредиент.",
+                level='ERROR')
+            return HttpResponseRedirect(request.path)
+        return super().response_change(request, obj)
+
+    def clean(self):
+        ingredients = self.cleaned_data.get('ingredients')
+        if not ingredients.exists():
+            raise forms.ValidationError(
+                'Необходимо добавить хотя бы один ингредиент.')
+
+        return super().clean()
 
 
-admin.site.register(Favorite)
-admin.site.register(ShoppingCart)
+admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(Tag)
+admin.site.register(FavoriteRecipe)
+admin.site.register(Follow)
+admin.site.register(ShopingCart)
+admin.site.register(IngredientInRecipe)
+admin.site.register(Ingredient)

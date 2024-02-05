@@ -10,8 +10,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         Ingredient.objects.all().delete()
         file_path = os.path.join(
-            settings.BASE_DIR, '..', 'data', 'ingredients.csv'
-            )
+            os.path.dirname(os.path.abspath(__file__)), 'ingredients.csv'
+        )
         with open(file_path, encoding='UTF-8') as file:
             reader = csv.reader(file)
             for row in reader:

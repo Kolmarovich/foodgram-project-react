@@ -1,60 +1,67 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
-from users.validators import validate_username
 
+class FoodgramUser(AbstractUser):
+    """Модель пользователей."""
 
-class User(AbstractUser):
-    """Модель пользователя."""
+    USER = 'user'
+    ADMIN = 'admin'
+    ROLE_CHOICES = [
+        (USER, 'пользователь'),
+        (ADMIN, 'администратор')
+    ]
+
     email = models.EmailField(
-        verbose_name='Электронная почта',
         max_length=254,
         unique=True,
+        verbose_name='Электронная почта'
+    )
+    status = models.CharField(
+        choices=ROLE_CHOICES,
+        default=USER,
+        max_length=20,
+        verbose_name='Статус пользователя на сайте'
     )
     username = models.CharField(
-        'Имя пользователя',
-        validators=(validate_username,),
         max_length=150,
         unique=True,
+        validators=(UnicodeUsernameValidator(),),
+        verbose_name='Никнейм'
     )
     first_name = models.CharField(
-        verbose_name='Имя',
-        max_length=150,
+        max_length=30,
+        verbose_name='Имя'
     )
     last_name = models.CharField(
-        verbose_name='Фамилия',
         max_length=150,
+        verbose_name='Фамилия'
     )
     password = models.CharField(
-        verbose_name='Пароль',
-        max_length=150,
+        max_length=128,
+        verbose_name='Пароль'
     )
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'password')
+
     class Meta:
+        ordering = ('username',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
-        return f'{self.username} - {self.email}'
+        return self.username
 
+    @property
+    def is_user_role(self):
+        return self.status == self.USER
 
-class Follow(models.Model):
-    """Модель подписки."""
-    user = models.ForeignKey(
-        User,
-        verbose_name='Подписчик',
-        on_delete=models.CASCADE,
-        related_name='subscriber',
-    )
-    author = models.ForeignKey(
-        User,
-        verbose_name='Автор',
-        on_delete=models.CASCADE,
-        related_name='following',
-    )
+    @property
+    def is_admin_role(self):
+        return self.status == self.ADMIN
 
-    class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-        
-        
+    @property
+    def get_recipes_count(self):
+        return self.recipe.count()    
