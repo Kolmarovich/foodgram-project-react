@@ -137,14 +137,11 @@ class RecipeAddSerializer(serializers.ModelSerializer):
         cooking_time = data
 
         if cooking_time is None or cooking_time < 1:
-            raise serializers.ValidationError(
-                                              'Время приготовления должно быть'
-                                              ' не меньше одной минуты'
-                                            )
+            raise serializers.ValidationError('Время приготовления должно быть'
+                                              ' не меньше одной минуты')
         if cooking_time > 1440:
             raise serializers.ValidationError('Время приготовления не должно'
-                                              ' превышать 24 часа (1440 минут)'
-                                              )
+                                              ' превышать 1440 минут')
         return data
 
     def validate_tags(self, data):

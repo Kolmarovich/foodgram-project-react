@@ -116,11 +116,9 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipesViewSet(viewsets.ModelViewSet):
     """Вьюсет для просмотра и редактирования рецептов."""
 
-    queryset = Recipe.objects.prefetch_related(
-            'tags',
-            'ingredients',
-            'author'
-        ).all()
+    queryset = Recipe.objects.prefetch_related('tags',
+                                               'ingredients',
+                                               'author').all()
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend, RecipeOrderingFilter)
     permission_classes = (IsAuthorOrReadOnly | IsAdminOrReadOnly,)
