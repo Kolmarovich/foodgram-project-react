@@ -1,7 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import (
-    RegexValidator, MinValueValidator, MaxValueValidator)
+    MinValueValidator, MaxValueValidator)
+from colorfield.fields import ColorField
 
 from users.models import FoodgramUser
 
@@ -10,20 +11,7 @@ class Tag(models.Model):
     """Модель для хранения тегов."""
 
     name = models.CharField('Название тега', max_length=200)
-    color = models.CharField(
-        'Цвет тега',
-        unique=True,
-        max_length=7,
-        validators=[
-            RegexValidator(
-                regex=r'^#[a-z0-9]{0,6}$',
-                message='Неверное значение. Допускаются только цифры, '
-                'символ #(обратите внимание,что символ # должен быть первым )'
-                'и английские буквы в нижнем регистре.',
-                code='invalid_color',
-            ),
-        ],
-    )
+    color = ColorField('Цвет тега', unique=True)
     slug = models.CharField(
         'слаг тега',
         max_length=200,

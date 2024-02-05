@@ -1,6 +1,7 @@
 import csv
 import os
 from django.core.management.base import BaseCommand
+
 from recipes.models import Ingredient
 
 
@@ -13,9 +14,9 @@ class Command(BaseCommand):
         )
         with open(file_path, encoding='UTF-8') as file:
             reader = csv.reader(file)
-            for row in reader:
+            for name, measurement_unit in reader:
                 ingredient = Ingredient(
-                    name=row[0],
-                    measurement_unit=row[1],
+                    name=name,
+                    measurement_unit=measurement_unit,
                 )
                 ingredient.save()

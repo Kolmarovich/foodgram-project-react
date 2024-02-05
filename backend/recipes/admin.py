@@ -7,22 +7,12 @@ from .models import (
 )
 
 
-class IngredientInRecipeInlineFormSet(forms.BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        if any(self.errors):
-            return
-        if not any(form.cleaned_data for form in self.forms):
-            raise forms.ValidationError(
-                'Необходимо добавить хотя бы один ингредиент.')
-
-
 class IngredientInRecipeInline(admin.TabularInline):
     model = IngredientInRecipe
     extra = 1
-    formset = IngredientInRecipeInlineFormSet
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     inlines = (IngredientInRecipeInline,)
     filter_horizontal = ['tags']
@@ -54,7 +44,6 @@ class RecipeAdmin(admin.ModelAdmin):
         return super().clean()
 
 
-admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Tag)
 admin.site.register(FavoriteRecipe)
 admin.site.register(Follow)

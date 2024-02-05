@@ -3,6 +3,7 @@ from django.db.models import F
 from djoser.serializers import UserSerializer
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework import status
 
 from recipes.models import (
     FavoriteRecipe, IngredientInRecipe, Ingredient,
@@ -23,12 +24,15 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        user = request.user if request else None
-        return (
-            Follow.objects
-            .filter(author_id=obj.id, user=user)
-            .exists()
-        ) if user else False
+        user = request.user
+        if request and request.user.is_authenticated:
+            return (
+                Follow.objects
+                .filter(author_id=obj.id, user=user)
+                .exists()
+            )
+        else:
+            return None
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -103,13 +107,14 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
-        return (
-            request
-            and ShopingCart.objects.filter(
-                recipe_id=obj.id,
-                user=request.user
-            ).exists()
-        )
+        if request and request.user.is_authenticated:
+            return (
+                ShopingCart.objects.filter(
+                    recipe_id=obj.id,
+                    user=request.user
+                ).exists()
+            )
+        return False
 
 
 class RecipeAddSerializer(serializers.ModelSerializer):
@@ -127,6 +132,20 @@ class RecipeAddSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients',
             'image', 'name', 'text', 'cooking_time',
         )
+
+    def validate_cooking_time(self, data):
+        cooking_time = data
+
+        if cooking_time is None or cooking_time < 1:
+            raise serializers.ValidationError(
+                                              'Время приготовления должно быть'
+                                              ' не меньше одной минуты'
+                                            )
+        if cooking_time > 1440:
+            raise serializers.ValidationError('Время приготовления не должно'
+                                              ' превышать 24 часа (1440 минут)'
+                                              )
+        return data
 
     def validate_tags(self, data):
         """
@@ -178,7 +197,7 @@ class RecipeAddSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'У Вас уже есть рецепт с таким же описанием. '
                 'Проверьте свой рецепт.',
-                code=400,
+                code=status.HTTP_400_BAD_REQUEST,
             )
 
         tags = validated_data.pop('tags')
