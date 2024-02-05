@@ -22,7 +22,6 @@ class CustomUserSerializer(UserSerializer):
                   'last_name', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
-        """Получает значение, указывающее, подписан ли пользователь на автора."""
         request = self.context.get('request')
         user = request.user if request else None
         return (
@@ -210,12 +209,14 @@ class RecipeAddSerializer(serializers.ModelSerializer):
 
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.cooking_time = validated_data.get('cooking_time', 
+                                                   instance.cooking_time)
 
         new_text = validated_data.get('text', instance.text)
 
         if new_text != instance.text:
-            if Recipe.objects.filter(author=author, text=new_text).exclude(id=instance.id).exists():
+            if (Recipe.objects.filter(author=author,
+               text=new_text).exclude(id=instance.id).exists()):
                 raise serializers.ValidationError(
                     'У Вас уже есть рецепт с таким же описанием. '
                     'Проверьте свой рецепт.'

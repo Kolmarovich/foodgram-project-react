@@ -64,4 +64,4 @@ class FoodgramUser(AbstractUser):
 
     @property
     def get_recipes_count(self):
-        return self.recipe.count()    
+        return self.recipe.count()
