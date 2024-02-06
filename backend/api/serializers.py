@@ -25,14 +25,13 @@ class CustomUserSerializer(UserSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         user = request.user
-        if request and request.user.is_authenticated:
-            return (
+        if not (request and request.user.is_authenticated):
+            return None
+        return (
                 Follow.objects
                 .filter(author_id=obj.id, user=user)
                 .exists()
             )
-        else:
-            return None
 
 
 class TagSerializer(serializers.ModelSerializer):

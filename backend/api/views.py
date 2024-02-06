@@ -10,7 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework import permissions
 
 from recipes.models import (
     ShopingCart, FavoriteRecipe, Follow,
@@ -30,16 +30,22 @@ class CustomUsersViewSet(UserViewSet):
     """Вьюсет для обработки всех запросов от пользователей."""
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
+    http_method_names = ('get', 'post', 'delete')
 
     class SubscriptionsPagination(PageNumberPagination):
         page_size = 10
         page_size_query_param = 'page_size'
         max_page_size = 100
 
+    def get_permissions(self):
+        """Распределение прав на действия."""
+        if self.action in ('me', 'subscriptions', 'subscribe'):
+            return (permissions.IsAuthenticated(),)
+        return (permissions.AllowAny(),)
+
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
-        permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, **kwargs):
         user = request.user
@@ -74,10 +80,7 @@ class CustomUsersViewSet(UserViewSet):
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(
-        detail=False,
-        permission_classes=(IsAuthenticated,),
-    )
+    @action(detail=False,)
     def subscriptions(self, request):
         """Возвращает авторов, на которых подписан текущий пользователь."""
         subscriptions_data = User.objects.filter(
@@ -149,6 +152,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
         }
 
         if request.method == 'POST':
+            if ShopingCart.objects.filter(user=user,
+                                          recipe_id=recipe_id).exists():
+                return Response(
+                    {"message": "Рецепт уже в списке покупок."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             serializer = RecipeMinifiedSerializer(
                 instance=data,
                 data=request.data,
