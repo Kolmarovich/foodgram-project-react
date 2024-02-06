@@ -27,11 +27,8 @@ class CustomUserSerializer(UserSerializer):
         user = request.user
         if not (request and request.user.is_authenticated):
             return None
-        return (
-                Follow.objects
-                .filter(author_id=obj.id, user=user)
-                .exists()
-            )
+        return (Follow.objects.filter(author_id=obj.id, user=user)
+                .exists())
 
 
 class TagSerializer(serializers.ModelSerializer):
