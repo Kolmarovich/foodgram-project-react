@@ -64,4 +64,4 @@ class RecipeOrderingFilter(OrderingFilter):
         Определяет значение сортировки по умолчанию.
         Сортировка по убыванию ID.
         """
-        return ['-id']
+        return ('-id',)

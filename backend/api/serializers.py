@@ -203,15 +203,15 @@ class RecipeAddSerializer(serializers.ModelSerializer):
             recipe = Recipe.objects.create(author=author, **validated_data)
             recipe.tags.set(tags)
 
-        IngredientInRecipe.objects.bulk_create([
+        ingredients_in_recipe = [
             IngredientInRecipe(
                 recipe=recipe,
                 amount=ingredient.get('amount'),
-                ingredient=Ingredient.objects.get(
-                    id=ingredient.get('id')
-                ),
+                ingredient_id=ingredient.get('id'),
             ) for ingredient in ingredients
-        ])
+        ]
+
+        IngredientInRecipe.objects.bulk_create(ingredients_in_recipe)
 
         return recipe
 
@@ -243,15 +243,15 @@ class RecipeAddSerializer(serializers.ModelSerializer):
 
         instance.tags.set(tags)
 
-        IngredientInRecipe.objects.bulk_create([
+        ingredients_in_recipe = [
             IngredientInRecipe(
                 recipe=instance,
                 amount=ingredient.get('amount'),
-                ingredient=Ingredient.objects.get(
-                    id=ingredient.get('id')
-                ),
+                ingredient_id=ingredient.get('id'),
             ) for ingredient in ingredients
-        ])
+        ]
+
+        IngredientInRecipe.objects.bulk_create(ingredients_in_recipe)
 
         instance.save()
         return instance
